@@ -509,3 +509,147 @@ Often there is a need to have a local environment for testing Mautic - for examp
 In Mautic, DDEV is the tool of choice for this purpose. It's very easy to work with.
 
 To learn how to set up DDEV with Mautic, please review the documentation in the Contributors :xref:`Handbook`.
+
+Install Mautic using Docker on MacBook
+======================================
+
+Using Docker to set up Mautic on a MacBook simplifies the installation process by containerizing the application and its dependencies. Follow these steps to get started:
+
+Step 1: Install Docker Desktop
+-------------------------------
+
+1. **Download Docker Desktop for Mac with Apple Chip**
+   
+   - Visit the `official Docker website <https://docs.docker.com/desktop/mac/install/>`_ to download Docker Desktop.
+
+2. **Install Docker Desktop**
+
+   - Open the downloaded `.dmg` file and drag the Docker icon to your Applications folder.
+
+3. **Launch Docker Desktop**
+
+   - Open Docker Desktop from your Applications folder. You may need to grant permissions and authenticate with your system password upon the first launch.
+
+4. **Adjust Docker Preferences** *(Optional)*
+
+   - Consider adjusting Docker's preferences to allocate more resources (CPU, Memory) for running multiple or resource-intensive containers.
+
+Step 2: Create a Docker Compose File for Mautic
+------------------------------------------------
+
+1. **Prepare the Project Directory**
+
+   - Create a directory for your Mautic project using the terminal command:
+
+     .. code-block:: shell
+
+        mkdir ~/mautic-docker && cd ~/mautic-docker
+
+2. **Compose the Docker File**
+.. code-block:: yaml
+
+   version: '3.7'
+
+   services:
+     mautic_db:
+       image: mysql:8.0
+       command: --default-authentication-plugin=mysql_native_password
+       environment:
+         MYSQL_ROOT_PASSWORD: rootpassword
+         MYSQL_DATABASE: mautic
+         MYSQL_USER: mautic
+         MYSQL_PASSWORD: mauticpassword
+       volumes:
+         - mautic_db_data:/var/lib/mysql
+       healthcheck:
+         test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+         timeout: 20s
+         retries: 10
+
+     mautic:
+       image: mautic/mautic:5-apache
+       depends_on:
+         mautic_db:
+           condition: service_healthy
+       ports:
+         - "8080:80"
+       environment:
+         MAUTIC_DB_HOST: mautic_db
+         MAUTIC_DB_USER: mautic
+         MAUTIC_DB_PASSWORD: mauticpassword
+         MAUTIC_DB_NAME: mautic
+       volumes:
+         - mautic_html:/var/www/html
+
+   volumes:
+     mautic_db_data:
+     mautic_html:
+
+    This configuration defines the necessary services and volumes for Mautic and its MySQL database.
+
+Step 3: Start Mautic Using Docker Compose
+-----------------------------------------
+
+1. **Launch the Services**
+
+   - In the terminal, within your project directory, initiate Mautic and its database with:
+
+     .. code-block:: shell
+
+        docker-compose up -d
+
+2. **Verify the Container Status**
+
+   - Ensure that the containers are up and running by executing:
+
+     .. code-block:: shell
+
+        docker-compose ps
+
+Step 4: Access Mautic
+---------------------
+
+1. **Open Mautic Installation Page**
+
+   - Navigate to `http://localhost:8080` in your web browser to access the Mautic installation wizard.
+
+2. **Complete the Installation Wizard**
+
+   - Follow the wizard steps, using the environment variables set in the `docker-compose.yml` file for database configuration.
+
+Step 5: Using Mautic
+--------------------
+
+- After installation, log into Mautic using the admin credentials you created during the setup process.
+
+Step 6: Managing Docker Containers
+----------------------------------
+
+- **Stop Containers**
+
+  .. code-block:: shell
+
+     docker-compose down
+
+- **Restart Containers**
+
+  .. code-block:: shell
+
+     docker-compose up -d
+
+- **View Logs**
+
+  .. code-block:: shell
+
+     docker-compose logs
+
+Additional Tips for Docker Beginners
+------------------------------------
+
+- **Docker Documentation**
+
+  - Explore the `Docker documentation <https://docs.docker.com/>`_ for a comprehensive understanding of Docker concepts and commands.
+
+- **Docker Hub**
+
+  - Find Docker images for various applications on `Docker Hub <https://hub.docker.com/>`. The `mautic/mautic` image is a starting example.
